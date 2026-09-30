@@ -476,6 +476,10 @@
             users = JSON.parse(localStorage.getItem('optiroute_users') || 'null') || DEFAULT_USERS.map(user => ({ ...user }));
             ensureUsersFromCustomers();
             const requestedRole = new URLSearchParams(window.location.search).get('role');
+            if (!requestedRole) {
+                window.location.replace('login.html');
+                return;
+            }
             roleLocked = ['admin', 'rep', 'manager'].includes(requestedRole) ? requestedRole : '';
             if (roleLocked) {
                 const savedProfile = getUser(localStorage.getItem('optiroute_user'));

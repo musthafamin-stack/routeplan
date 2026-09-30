@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | OptiRoute</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme: light; --ink: #172321; --muted: #64716d; --green: #08765f; --lime: #c7f36b; --line: #dfe8e4; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; font-family: 'DM Sans', sans-serif; color: var(--ink); background: #f3f7f4; }
+        .layout { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 1fr) minmax(390px, 0.9fr); }
+        .brand-panel { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: clamp(28px, 5vw, 64px); color: #eef7f1; background: #12362e; }
+        .brand-panel::after { content: ''; position: absolute; width: 540px; height: 540px; right: -180px; bottom: -200px; border: 1px solid rgba(199,243,107,.25); border-radius: 50%; box-shadow: 0 0 0 42px rgba(199,243,107,.04), 0 0 0 92px rgba(199,243,107,.035); }
+        .brand, .brand-copy, .brand-footer { position: relative; z-index: 1; }
+        .brand { display: flex; align-items: center; gap: 12px; font-family: Manrope, sans-serif; font-weight: 800; font-size: 20px; }
+        .brand-icon { display: grid; place-items: center; width: 42px; height: 42px; color: #12362e; background: var(--lime); border-radius: 11px; font-size: 23px; }
+        .brand-copy { max-width: 520px; padding: 50px 0; }
+        .eyebrow { margin: 0 0 18px; color: var(--lime); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        h1 { margin: 0; font-family: Manrope, sans-serif; font-size: clamp(36px, 4.5vw, 64px); line-height: 1.04; }
+        .brand-copy p { max-width: 410px; margin: 22px 0 0; color: #c8d9d0; font-size: 16px; line-height: 1.65; }
+        .brand-footer { color: #a8c0b4; font-size: 12px; }
+        .form-panel { display: grid; place-items: center; padding: 36px 24px; }
+        .form-wrap { width: min(100%, 400px); }
+        .form-wrap h2 { margin: 0; font-family: Manrope, sans-serif; font-size: 28px; }
+        .form-wrap > p { margin: 9px 0 30px; color: var(--muted); font-size: 14px; }
+        label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+        input { width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: #fff; color: var(--ink); font: inherit; }
+        input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(8,118,95,.12); }
+        button { width: 100%; height: 48px; margin-top: 18px; border: 0; border-radius: 8px; background: var(--green); color: #fff; font: 700 14px 'DM Sans', sans-serif; cursor: pointer; }
+        button:hover { background: #075e4c; }
+        #loginMessage { min-height: 20px; margin: 12px 0 0; color: #b33838; font-size: 13px; }
+        .hint { margin-top: 26px; padding: 14px 15px; border-left: 3px solid #91bd38; background: #e9f2df; color: #48563d; font-size: 12px; line-height: 1.5; }
+        @media (max-width: 760px) {
+            .layout { grid-template-columns: 1fr; }
+            .brand-panel { min-height: 230px; padding: 24px; }
+            .brand-copy { padding: 34px 0 12px; }
+            .brand-copy h1 { font-size: 37px; }
+            .brand-copy p, .brand-footer { display: none; }
+            .form-panel { padding: 34px 24px 48px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="layout">
+        <section class="brand-panel" aria-label="OptiRoute">
+            <div class="brand"><span class="brand-icon" aria-hidden="true">↗</span><span>OptiRoute</span></div>
+            <div class="brand-copy">
+                <p class="eyebrow">Field sales, in motion</p>
+                <h1>Make every visit count.</h1>
+                <p>Plan customer visits, focus on the right opportunities, and keep your field activity connected.</p>
+            </div>
+            <div class="brand-footer">Territory planning · Customer visits · Route performance</div>
+        </section>
+        <section class="form-panel">
+            <form class="form-wrap" id="loginForm">
+                <h2>Sign in</h2>
+                <p>Enter your assigned user number to open your workspace.</p>
+                <label for="userId">User number</label>
+                <input id="userId" name="userId" autocomplete="username" placeholder="e.g. SC101" required>
+                <button type="submit">Continue</button>
+                <p id="loginMessage" role="status" aria-live="polite"></p>
+                <div class="hint">Use the user number assigned by your administrator.</div>
+            </form>
+        </section>
+    </main>
+    <script>
+        const sampleUsers = [
+            { id: 'ADMIN', role: 'admin' },
+            { id: 'SC101', role: 'rep' },
+            { id: 'SC102', role: 'rep' },
+            { id: 'ASM01', role: 'manager' }
+        ];
+
+        document.getElementById('loginForm').addEventListener('submit', event => {
+            event.preventDefault();
+            const userId = document.getElementById('userId').value.trim();
+            let users = sampleUsers;
+            try {
+                const storedUsers = JSON.parse(localStorage.getItem('optiroute_users') || 'null');
+                if (Array.isArray(storedUsers)) users = storedUsers;
+            } catch {
+                users = sampleUsers;
+            }
+
+            const user = users.find(account => account.id.toLowerCase() === userId.toLowerCase());
+            const message = document.getElementById('loginMessage');
+            if (!user || !['admin', 'rep', 'manager'].includes(user.role)) {
+                message.textContent = 'User number not found. Check it with your administrator.';
+                return;
+            }
+
+            if (!localStorage.getItem('optiroute_users')) {
+                localStorage.setItem('optiroute_users', JSON.stringify(users));
+            }
+            localStorage.setItem('optiroute_user', user.id);
+            const page = user.role === 'admin' ? 'admin.html' : user.role === 'manager' ? 'manager.html' : 'sales-rep.html';
+            window.location.assign(page);
+        });
+    </script>
+</body>
+</html>

@@ -10,6 +10,15 @@
     </style>
 </head>
 <body>
-    <iframe title="OptiRoute Sales Rep Portal" src="./index.html?role=rep"></iframe>
+    <iframe id="portal" title="OptiRoute Sales Rep Portal"></iframe>
+    <script>
+        const userId = localStorage.getItem('optiroute_user');
+        const users = JSON.parse(localStorage.getItem('optiroute_users') || '[]');
+        if (!users.some(user => user.id === userId && user.role === 'rep')) {
+            window.location.replace('login.html');
+        } else {
+            document.getElementById('portal').src = './index.html?role=rep';
+        }
+    </script>
 </body>
 </html>

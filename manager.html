@@ -10,6 +10,15 @@
     </style>
 </head>
 <body>
-    <iframe title="OptiRoute Manager Portal" src="./index.html?role=manager"></iframe>
+    <iframe id="portal" title="OptiRoute Manager Portal"></iframe>
+    <script>
+        const userId = localStorage.getItem('optiroute_user');
+        const users = JSON.parse(localStorage.getItem('optiroute_users') || '[]');
+        if (!users.some(user => user.id === userId && user.role === 'manager')) {
+            window.location.replace('login.html');
+        } else {
+            document.getElementById('portal').src = './index.html?role=manager';
+        }
+    </script>
 </body>
 </html>
