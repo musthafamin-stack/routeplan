@@ -74,7 +74,7 @@
 
     <div class="flex flex-1 overflow-hidden relative">
         <!-- Sidebar Navigation -->
-        <aside class="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
+        <aside class="order-2 w-14 sm:w-56 md:w-64 bg-white border-l border-slate-200 flex flex-col flex-shrink-0">
             <nav class="p-3 space-y-1.5 flex-1">
                 <button onclick="switchTab('tab-optimizer')" id="nav-optimizer" class="nav-tab active flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm transition-all bg-indigo-50 text-indigo-700 font-semibold">
                     <i class="fa-solid fa-map-location-dot text-lg w-6 text-center"></i>
@@ -85,13 +85,13 @@
                     <span class="hidden md:inline">My Visits</span>
                     <span id="pendingBadge" class="hidden md:inline-flex ml-auto text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold">0</span>
                 </button>
-                <button onclick="switchTab('tab-user-admin')" id="nav-user-admin" class="nav-tab hidden flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
+                <button onclick="switchTab('tab-user-admin')" id="nav-user-admin" title="User Management" class="nav-tab hidden flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
                     <i class="fa-solid fa-user-gear text-lg w-6 text-center"></i>
-                    <span class="hidden md:inline">User Management</span>
+                    <span class="hidden sm:inline">User Management</span>
                 </button>
-                <button onclick="switchTab('tab-customers')" id="nav-customers" class="nav-tab flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
+                <button onclick="switchTab('tab-customers')" id="nav-customers" title="Customer Management" class="nav-tab flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
                     <i class="fa-solid fa-users text-lg w-6 text-center"></i>
-                    <span class="hidden md:inline">Customer Management</span>
+                    <span class="hidden sm:inline">Customer Management</span>
                 </button>
                 <button onclick="switchTab('tab-reports')" id="nav-reports" class="nav-tab flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
                     <i class="fa-solid fa-chart-pie text-lg w-6 text-center"></i>
@@ -115,7 +115,7 @@
         </aside>
 
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto custom-scrollbar bg-slate-100 p-4 sm:p-6 flex flex-col">
+        <main class="order-1 flex-1 overflow-y-auto custom-scrollbar bg-slate-100 p-4 sm:p-6 flex flex-col">
 
             <!-- TAB 1: ROUTE OPTIMIZER & MAP -->
             <div id="tab-optimizer" class="tab-content flex-1 flex flex-col space-y-4">
