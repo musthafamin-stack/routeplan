@@ -49,11 +49,12 @@
             <div class="flex items-center space-x-4">
                 <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm">
                     <i class="fa-solid fa-user-gear text-indigo-400 mr-2"></i>
-                    <span class="text-slate-400 mr-2 hidden sm:inline">Active User:</span>
+                    <span class="text-slate-400 mr-2 hidden sm:inline">Sign in as:</span>
                     <select id="userSelector" onchange="switchUser()" class="bg-transparent font-medium text-white focus:outline-none cursor-pointer">
                         <option value="SC101" class="bg-slate-800">SC101 - Sarah Jenkins (Rep)</option>
                         <option value="SC102" class="bg-slate-800">SC102 - Michael Chen (Rep)</option>
-                        <option value="ASM01" class="bg-slate-800">ASM01 - David Vance (Manager - All View)</option>
+                            <option value="ASM01" class="bg-slate-800">ASM01 - David Vance (Manager)</option>
+                            <option value="ADMIN" class="bg-slate-800">ADMIN - System Administrator</option>
                     </select>
                 </div>
 
@@ -72,16 +73,16 @@
             <nav class="p-3 space-y-1.5 flex-1">
                 <button onclick="switchTab('tab-optimizer')" id="nav-optimizer" class="nav-tab active flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm transition-all bg-indigo-50 text-indigo-700 font-semibold">
                     <i class="fa-solid fa-map-location-dot text-lg w-6 text-center"></i>
-                    <span class="hidden md:inline">Route Optimizer</span>
+                    <span class="hidden md:inline">My Route Plan</span>
                 </button>
                 <button onclick="switchTab('tab-visits')" id="nav-visits" class="nav-tab flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
                     <i class="fa-solid fa-clipboard-check text-lg w-6 text-center"></i>
-                    <span class="hidden md:inline">Today's Visits</span>
+                    <span class="hidden md:inline">My Visits</span>
                     <span id="pendingBadge" class="hidden md:inline-flex ml-auto text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold">0</span>
                 </button>
                 <button onclick="switchTab('tab-customers')" id="nav-customers" class="nav-tab flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
                     <i class="fa-solid fa-users text-lg w-6 text-center"></i>
-                    <span class="hidden md:inline">Customers & Upload</span>
+                    <span class="hidden md:inline">Admin Console</span>
                 </button>
                 <button onclick="switchTab('tab-reports')" id="nav-reports" class="nav-tab flex items-center space-x-3 w-full px-3 py-2.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-50 transition-all">
                     <i class="fa-solid fa-chart-pie text-lg w-6 text-center"></i>
@@ -139,6 +140,13 @@
                                 <span class="text-xs text-slate-500 hidden sm:inline">(Dubai / Regional Hub)</span>
                             </div>
                             <div class="flex items-center space-x-2">
+                                <select id="routeOwnerSelector" onchange="changeRouteOwner()" class="hidden border border-slate-300 rounded-lg px-2 py-1 text-xs bg-white text-slate-700" aria-label="View route owner"></select>
+                                <button id="newRoutePlanButton" onclick="createNewRoutePlan()" class="px-3 py-1 text-xs bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg border border-slate-300">
+                                    <i class="fa-solid fa-file-circle-plus mr-1"></i> New Plan
+                                </button>
+                                <button id="addRouteStopButton" onclick="openAddRouteStop()" class="px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition-all">
+                                    <i class="fa-solid fa-plus mr-1"></i> Add Stop
+                                </button>
                                 <button onclick="recenterMap()" class="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-all">
                                     <i class="fa-solid fa-crosshairs mr-1"></i> Recenter
                                 </button>
@@ -206,17 +214,42 @@
 
             <!-- TAB 3: CUSTOMER MANAGEMENT & CSV UPLOAD -->
             <div id="tab-customers" class="tab-content flex-1 hidden space-y-4">
+                <section class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                        <div>
+                            <h2 class="font-bold text-slate-800 text-lg">User Administration</h2>
+                            <p class="text-xs text-slate-500 mt-1">Create sales consultant and manager accounts, then assign consultants to their manager.</p>
+                        </div>
+                    </div>
+                    <form id="userAdminForm" onsubmit="addUser(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 items-end">
+                        <label class="text-xs font-semibold text-slate-600">User number<input id="newUserId" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" placeholder="SC103"></label>
+                        <label class="text-xs font-semibold text-slate-600">Full name<input id="newUserName" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs" placeholder="Alex Morgan"></label>
+                        <label class="text-xs font-semibold text-slate-600">Role<select id="newUserRole" onchange="toggleManagerAssignment()" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"><option value="rep">Sales consultant</option><option value="manager">Area sales manager</option></select></label>
+                        <label id="managerAssignmentField" class="text-xs font-semibold text-slate-600">Reports to<select id="newUserManager" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></select></label>
+                        <button type="submit" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-lg"><i class="fa-solid fa-user-plus mr-1"></i> Add User</button>
+                    </form>
+                    <div class="overflow-x-auto mt-4">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 uppercase"><tr><th class="p-2">User #</th><th class="p-2">Name</th><th class="p-2">Role</th><th class="p-2">Manager</th></tr></thead>
+                            <tbody id="userTableBody" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <!-- Data Upload & Controls -->
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
                     <div class="lg:col-span-2">
-                        <h2 class="font-bold text-slate-800 text-lg">Customer Master Data</h2>
-                        <p class="text-xs text-slate-500 mt-1">Upload CSV data with customer coordinates, turnover, and assigned rep details, or add customers manually.</p>
+                        <h2 class="font-bold text-slate-800 text-lg">Customer Assignment Portal</h2>
+                        <p class="text-xs text-slate-500 mt-1">Upload customers and assign each account to a consultant and area sales manager.</p>
                     </div>
-                    <div class="flex items-center space-x-2 justify-end">
+                    <div class="flex flex-wrap items-center gap-2 justify-end">
                         <label for="csvFileInput" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg border border-indigo-200 cursor-pointer transition-all flex items-center">
                             <i class="fa-solid fa-file-csv text-base mr-2"></i> Import CSV Data
                         </label>
                         <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVUpload(event)">
+                        <button onclick="downloadCSVTemplate()" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-lg border border-slate-200 transition-all">
+                            <i class="fa-solid fa-download mr-1"></i> CSV Template
+                        </button>
                         
                         <button onclick="resetToSampleData()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg border border-slate-200 transition-all">
                             <i class="fa-solid fa-rotate-left mr-1"></i> Reset Sample Data
@@ -293,6 +326,29 @@
         </main>
     </div>
 
+    <div id="routeStopModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden items-center justify-center p-4">
+        <form id="routeStopForm" onsubmit="saveRouteStop(event)" class="bg-white rounded-xl max-w-lg w-full shadow-2xl overflow-hidden">
+            <div class="bg-emerald-700 p-4 text-white flex justify-between items-center">
+                <div><h3 class="font-bold">Add Stop To My Route</h3><p class="text-xs text-emerald-100">The stop will be added to this user's plan.</p></div>
+                <button type="button" onclick="closeRouteStopModal()" class="text-white text-xl" aria-label="Close">&times;</button>
+            </div>
+            <div class="p-5 space-y-3">
+                <label id="existingRouteCustomerField" class="hidden text-xs font-semibold text-slate-600">Territory customer<select id="routeStopCustomer" class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></select></label>
+                <div id="newRouteCustomerFields" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="text-xs font-semibold text-slate-600">Customer number<input id="routeStopId" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></label>
+                    <label class="text-xs font-semibold text-slate-600">Customer name<input id="routeStopName" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></label>
+                    <label class="text-xs font-semibold text-slate-600">Latitude<input id="routeStopLat" type="number" min="-90" max="90" step="any" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></label>
+                    <label class="text-xs font-semibold text-slate-600">Longitude<input id="routeStopLng" type="number" min="-180" max="180" step="any" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></label>
+                    <label class="text-xs font-semibold text-slate-600 sm:col-span-2">Turnover / potential<input id="routeStopTurnover" type="number" min="0" step="any" value="0" required class="mt-1 w-full border border-slate-300 rounded-lg px-3 py-2 text-xs"></label>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                <button type="button" onclick="closeRouteStopModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 rounded-lg">Add To Plan</button>
+            </div>
+        </form>
+    </div>
+
     <!-- MODAL: CHECK-OUT & OUTCOME FORM -->
     <div id="checkoutModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden transform transition-all">
@@ -318,7 +374,7 @@
                         <input type="text" id="checkoutDuration" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 text-xs font-mono font-bold text-indigo-700">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">GPS Distance Offset</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Check-Out GPS Distance</label>
                         <input type="text" id="checkoutGpsDistance" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 text-xs font-medium text-slate-700">
                     </div>
                 </div>
@@ -343,7 +399,7 @@
 
                 <div class="pt-2 flex items-center justify-end space-x-2">
                     <button type="button" onclick="closeCheckoutModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-md transition-all">Submit Check-Out</button>
+                    <button id="checkoutSubmitButton" type="submit" disabled class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-md transition-all disabled:opacity-50">Submit Check-Out</button>
                 </div>
             </form>
         </div>
@@ -370,10 +426,19 @@
             { id: "CUST-110", name: "Grand Hypermarket Chain HQ", lat: 25.2680, lng: 55.3120, rep: "SC102", asm: "ASM01", turnover: 610000 },
             { id: "CUST-111", name: "Green Horizon Packaging", lat: 25.0890, lng: 55.1850, rep: "SC102", asm: "ASM01", turnover: 75000 }
         ];
+        const DEFAULT_USERS = [
+            { id: 'ADMIN', name: 'System Administrator', role: 'admin', managerId: '' },
+            { id: 'SC101', name: 'Sarah Jenkins', role: 'rep', managerId: 'ASM01' },
+            { id: 'SC102', name: 'Michael Chen', role: 'rep', managerId: 'ASM01' },
+            { id: 'ASM01', name: 'David Vance', role: 'manager', managerId: '' }
+        ];
 
         // Global State
         let customers = [];
+        let users = [];
         let currentUser = "SC101";
+        let routePlans = {};
+        let routeOwner = currentUser;
         let activeShift = false;
         let shiftStartTime = null;
         let activeVisit = null; // { custId, checkInTime, timerInterval }
@@ -394,25 +459,335 @@
                 saveCustomers();
             }
 
+            users = JSON.parse(localStorage.getItem('optiroute_users') || 'null') || DEFAULT_USERS.map(user => ({ ...user }));
+            ensureUsersFromCustomers();
+            currentUser = localStorage.getItem('optiroute_user') || currentUser;
+            routePlans = JSON.parse(localStorage.getItem('optiroute_route_plans') || 'null') || {};
+            users.filter(user => user.role === 'rep').forEach(user => {
+                if (!Array.isArray(routePlans[user.id])) {
+                    routePlans[user.id] = customers.filter(customer => customer.rep === user.id).map(customer => customer.id);
+                }
+            });
+            users.filter(user => user.role === 'manager').forEach(user => {
+                if (!Array.isArray(routePlans[user.id])) routePlans[user.id] = [];
+            });
+            if (!Array.isArray(routePlans[currentUser])) routePlans[currentUser] = [];
+            saveUsers();
+            saveRoutePlans();
+
+            visitLogs = JSON.parse(localStorage.getItem('optiroute_logs') || '[]');
+            const savedShift = JSON.parse(localStorage.getItem('optiroute_shift') || 'null');
+            const savedVisit = JSON.parse(localStorage.getItem('optiroute_active_visit') || 'null');
+            if (savedShift) {
+                activeShift = true;
+                shiftStartTime = new Date(savedShift.startedAt);
+            }
+            if (savedVisit) {
+                activeVisit = { ...savedVisit, checkInTime: new Date(savedVisit.checkInTime) };
+            }
+
+            routeOwner = currentUser;
             initMap();
+            populateUserSelector();
             switchUser();
+            if (activeShift) renderShiftStatus();
+            if (activeVisit) {
+                document.getElementById('activeVisitTimerBanner').classList.remove('hidden');
+                startVisitTimer();
+            }
         };
 
         function saveCustomers() {
             localStorage.setItem('optiroute_customers', JSON.stringify(customers));
         }
 
+        function saveUsers() {
+            localStorage.setItem('optiroute_users', JSON.stringify(users));
+        }
+
+        function saveRoutePlans() {
+            localStorage.setItem('optiroute_route_plans', JSON.stringify(routePlans));
+        }
+
+        function ensureUsersFromCustomers() {
+            customers.forEach(customer => {
+                if (customer.rep && !users.some(user => user.id === customer.rep)) {
+                    users.push({ id: customer.rep, name: customer.rep, role: 'rep', managerId: customer.asm || '' });
+                }
+                if (customer.asm && !users.some(user => user.id === customer.asm)) {
+                    users.push({ id: customer.asm, name: customer.asm, role: 'manager', managerId: '' });
+                }
+            });
+            if (!users.some(user => user.id === 'ADMIN')) users.unshift({ ...DEFAULT_USERS[0] });
+        }
+
+        function saveVisitState() {
+            localStorage.setItem('optiroute_logs', JSON.stringify(visitLogs));
+            localStorage.setItem('optiroute_shift', activeShift
+                ? JSON.stringify({ startedAt: shiftStartTime.toISOString() })
+                : 'null');
+            localStorage.setItem('optiroute_active_visit', activeVisit
+                ? JSON.stringify({ ...activeVisit, checkInTime: activeVisit.checkInTime.toISOString() })
+                : 'null');
+        }
+
+        function renderShiftStatus() {
+            document.getElementById('shiftBtn').className = "flex items-center space-x-2 px-4 py-1.5 rounded-lg font-semibold text-xs sm:text-sm transition-all bg-rose-600 hover:bg-rose-500 text-white shadow-md";
+            document.getElementById('shiftBtnText').innerText = 'End Day';
+            document.getElementById('shiftStatusBadge').className = 'inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800';
+            document.getElementById('shiftStatusBadge').innerText = 'On-Duty';
+            document.getElementById('shiftTimeText').innerText = `Started: ${shiftStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
         function switchUser() {
-            currentUser = document.getElementById('userSelector').value;
+            const selectedUser = document.getElementById('userSelector').value;
+            if (activeShift && selectedUser !== currentUser) {
+                document.getElementById('userSelector').value = currentUser;
+                showToast('End the active day before switching profiles.', 'warning');
+                return;
+            }
+            currentUser = selectedUser;
+            routeOwner = currentUser;
+            localStorage.setItem('optiroute_user', currentUser);
+            applyRoleAccess();
             showToast(`Switched active profile to ${currentUser}`, 'info');
             refreshAppViews();
         }
 
+        function populateUserSelector() {
+            const selector = document.getElementById('userSelector');
+            const selected = users.some(user => user.id === currentUser)
+                ? currentUser
+                : users.find(user => user.role === 'rep')?.id || users[0]?.id || '';
+            selector.innerHTML = users.map(user => {
+                const roleLabel = user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : 'Sales Rep';
+                return `<option value="${escapeHTML(user.id)}" class="bg-slate-800">${escapeHTML(user.id)} - ${escapeHTML(user.name)} (${roleLabel})</option>`;
+            }).join('');
+            currentUser = selected;
+            selector.value = selected;
+        }
+
+        function getUser(userId) {
+            return users.find(user => user.id === userId);
+        }
+
+        function getCurrentRole() {
+            return getUser(currentUser)?.role || 'rep';
+        }
+
+        function getVisibleCustomers() {
+            if (getCurrentRole() === 'admin') return [...customers];
+            if (getCurrentRole() === 'manager') return customers.filter(customer => customer.asm === currentUser);
+            return customers.filter(customer => customer.rep === currentUser);
+        }
+
+        function getRouteCustomers(ownerId = routeOwner) {
+            return (routePlans[ownerId] || []).map(id => customers.find(customer => customer.id === id)).filter(Boolean);
+        }
+
+        function applyRoleAccess() {
+            const admin = getCurrentRole() === 'admin';
+            document.getElementById('nav-customers').classList.toggle('hidden', !admin);
+            document.getElementById('nav-optimizer').classList.toggle('hidden', admin);
+            document.getElementById('nav-visits').classList.toggle('hidden', admin);
+            document.getElementById('nav-reports').classList.toggle('hidden', admin);
+            document.getElementById('shiftBtn').classList.toggle('hidden', admin);
+            switchTab(admin ? 'tab-customers' : 'tab-optimizer');
+        }
+
         function refreshAppViews() {
             renderCustomerTable();
+            renderAdminTables();
+            renderRouteOwnerSelector();
             runRouteOptimizer();
             renderVisitsQueue();
             renderActivityLogs();
+        }
+
+        function renderAdminTables() {
+            const body = document.getElementById('userTableBody');
+            if (!body) return;
+            const managers = users.filter(user => user.role === 'manager');
+            const managerSelect = document.getElementById('newUserManager');
+            managerSelect.innerHTML = managers.map(manager =>
+                `<option value="${escapeHTML(manager.id)}">${escapeHTML(manager.id)} - ${escapeHTML(manager.name)}</option>`
+            ).join('');
+            body.innerHTML = users.map(user => {
+                const managerOptions = managers.map(manager =>
+                    `<option value="${escapeHTML(manager.id)}" ${user.managerId === manager.id ? 'selected' : ''}>${escapeHTML(manager.id)} - ${escapeHTML(manager.name)}</option>`
+                ).join('');
+                return `
+                    <tr>
+                        <td class="p-2 font-mono font-bold">${escapeHTML(user.id)}</td>
+                        <td class="p-2"><input data-user-name="${escapeHTML(user.id)}" value="${escapeHTML(user.name)}" class="w-full min-w-32 border border-slate-200 rounded px-2 py-1"></td>
+                        <td class="p-2 capitalize">${escapeHTML(user.role)}</td>
+                        <td class="p-2">${user.role === 'rep' ? `<select data-user-manager="${escapeHTML(user.id)}" class="border border-slate-200 rounded px-2 py-1 bg-white">${managerOptions}</select>` : '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+            body.querySelectorAll('[data-user-name]').forEach(input => {
+                input.addEventListener('change', event => updateUser(event.currentTarget.dataset.userName, 'name', event.currentTarget.value));
+            });
+            body.querySelectorAll('[data-user-manager]').forEach(select => {
+                select.addEventListener('change', event => updateUser(event.currentTarget.dataset.userManager, 'managerId', event.currentTarget.value));
+            });
+            toggleManagerAssignment();
+        }
+
+        function updateUser(userId, field, value) {
+            if (getCurrentRole() !== 'admin') return;
+            const user = getUser(userId);
+            if (!user) return;
+            if (field === 'name') {
+                const name = value.trim();
+                if (!name) {
+                    renderAdminTables();
+                    showToast('A user name cannot be empty.', 'warning');
+                    return;
+                }
+                user.name = name;
+            } else if (field === 'managerId' && user.role === 'rep' && getUser(value)?.role === 'manager') {
+                user.managerId = value;
+                customers.filter(customer => customer.rep === userId).forEach(customer => customer.asm = value);
+                saveCustomers();
+            }
+            saveUsers();
+            populateUserSelector();
+            refreshAppViews();
+            showToast(`User ${userId} updated.`, 'success');
+        }
+
+        function toggleManagerAssignment() {
+            const role = document.getElementById('newUserRole').value;
+            document.getElementById('managerAssignmentField').classList.toggle('hidden', role !== 'rep');
+            document.getElementById('newUserManager').required = role === 'rep';
+        }
+
+        function addUser(event) {
+            event.preventDefault();
+            if (getCurrentRole() !== 'admin') return;
+            const id = document.getElementById('newUserId').value.trim();
+            const name = document.getElementById('newUserName').value.trim();
+            const role = document.getElementById('newUserRole').value;
+            const managerId = role === 'rep' ? document.getElementById('newUserManager').value : '';
+            if (!/^[A-Za-z0-9_-]+$/.test(id) || !name || users.some(user => user.id === id)) {
+                showToast('Enter a unique user number and full name.', 'warning');
+                return;
+            }
+            if (role === 'rep' && !getUser(managerId)) {
+                showToast('Select an existing area sales manager.', 'warning');
+                return;
+            }
+            users.push({ id, name, role, managerId });
+            routePlans[id] = [];
+            saveUsers();
+            saveRoutePlans();
+            document.getElementById('userAdminForm').reset();
+            populateUserSelector();
+            refreshAppViews();
+            showToast(`${role === 'manager' ? 'Manager' : 'Sales consultant'} ${id} added.`, 'success');
+        }
+
+        function renderRouteOwnerSelector() {
+            const selector = document.getElementById('routeOwnerSelector');
+            const isManager = getCurrentRole() === 'manager';
+            selector.classList.toggle('hidden', !isManager);
+            document.getElementById('addRouteStopButton').classList.toggle('hidden', getCurrentRole() === 'admin' || routeOwner !== currentUser);
+            document.getElementById('newRoutePlanButton').classList.toggle('hidden', getCurrentRole() === 'admin' || routeOwner !== currentUser);
+            if (!isManager) return;
+            const routeUsers = [getUser(currentUser), ...users.filter(user => user.role === 'rep' && user.managerId === currentUser)].filter(Boolean);
+            if (!routeUsers.some(user => user.id === routeOwner)) routeOwner = currentUser;
+            selector.innerHTML = routeUsers.map(user =>
+                `<option value="${escapeHTML(user.id)}">${escapeHTML(user.id === currentUser ? `${user.name} (My route)` : `${user.name} (Team route)`)}</option>`
+            ).join('');
+            selector.value = routeOwner;
+        }
+
+        function changeRouteOwner() {
+            routeOwner = document.getElementById('routeOwnerSelector').value;
+            renderRouteOwnerSelector();
+            runRouteOptimizer();
+        }
+
+        function createNewRoutePlan() {
+            if (getCurrentRole() === 'admin' || routeOwner !== currentUser || activeVisit) return;
+            if (!confirm('Start a fresh route plan? Rep plans will return to all assigned customers; manager plans will be cleared.')) return;
+            routePlans[currentUser] = getCurrentRole() === 'manager'
+                ? []
+                : getVisibleCustomers().filter(customer => customer.rep === currentUser).map(customer => customer.id);
+            routeOwner = currentUser;
+            saveRoutePlans();
+            refreshAppViews();
+            showToast('A fresh route plan is ready.', 'success');
+        }
+
+        function removeRouteStop(customerId) {
+            if (routeOwner !== currentUser || activeVisit?.custId === customerId) return;
+            routePlans[currentUser] = (routePlans[currentUser] || []).filter(id => id !== customerId);
+            saveRoutePlans();
+            refreshAppViews();
+        }
+
+        function openAddRouteStop() {
+            if (routeOwner !== currentUser || getCurrentRole() === 'admin') return;
+            const isManager = getCurrentRole() === 'manager';
+            const existingField = document.getElementById('existingRouteCustomerField');
+            const newFields = document.getElementById('newRouteCustomerFields');
+            existingField.classList.toggle('hidden', !isManager);
+            newFields.classList.toggle('hidden', isManager);
+            newFields.querySelectorAll('input').forEach(input => input.required = !isManager);
+            document.getElementById('routeStopForm').reset();
+
+            if (isManager) {
+                const planned = new Set(routePlans[currentUser] || []);
+                const available = getVisibleCustomers().filter(customer => !planned.has(customer.id));
+                const select = document.getElementById('routeStopCustomer');
+                select.innerHTML = available.map(customer => `<option value="${escapeHTML(customer.id)}">${escapeHTML(customer.id)} - ${escapeHTML(customer.name)}</option>`).join('');
+                if (available.length === 0) {
+                    showToast('All territory customers are already on your route.', 'info');
+                    return;
+                }
+            }
+            document.getElementById('routeStopModal').classList.remove('hidden');
+            document.getElementById('routeStopModal').classList.add('flex');
+        }
+
+        function closeRouteStopModal() {
+            document.getElementById('routeStopModal').classList.add('hidden');
+            document.getElementById('routeStopModal').classList.remove('flex');
+        }
+
+        function saveRouteStop(event) {
+            event.preventDefault();
+            const plan = routePlans[currentUser] || (routePlans[currentUser] = []);
+            if (getCurrentRole() === 'manager') {
+                const customerId = document.getElementById('routeStopCustomer').value;
+                if (!customerId || plan.includes(customerId)) return;
+                plan.push(customerId);
+            } else {
+                const id = document.getElementById('routeStopId').value.trim();
+                if (!/^[A-Za-z0-9_-]+$/.test(id) || customers.some(customer => customer.id === id)) {
+                    showToast('Use a unique customer number with letters, numbers, hyphens, or underscores.', 'warning');
+                    return;
+                }
+                const managerId = getUser(currentUser)?.managerId || '';
+                customers.push({
+                    id,
+                    name: document.getElementById('routeStopName').value.trim(),
+                    lat: Number(document.getElementById('routeStopLat').value),
+                    lng: Number(document.getElementById('routeStopLng').value),
+                    rep: currentUser,
+                    asm: managerId,
+                    turnover: Number(document.getElementById('routeStopTurnover').value),
+                    routeOnly: true
+                });
+                plan.push(id);
+                saveCustomers();
+            }
+            saveRoutePlans();
+            closeRouteStopModal();
+            refreshAppViews();
+            showToast('Stop added to your route plan.', 'success');
         }
 
         /* --- LEAFLET MAP & ROUTE OPTIMIZER ALGORITHM --- */
@@ -450,13 +825,16 @@
            Combines Turnover potential (60% weight) and Proximity distance (40% weight)
         */
         function runRouteOptimizer() {
-            // Filter customers for assigned rep or show all for ASM
-            let filteredCust = (currentUser === 'ASM01') ? 
-                [...customers] : 
-                customers.filter(c => c.rep === currentUser);
+            const filteredCust = getRouteCustomers(routeOwner);
 
             if (filteredCust.length === 0) {
                 currentOptimizedRoute = [];
+                updateMapAndRouteUI();
+                return;
+            }
+
+            if (routeOwner !== currentUser) {
+                currentOptimizedRoute = filteredCust;
                 updateMapAndRouteUI();
                 return;
             }
@@ -499,6 +877,8 @@
             }
 
             currentOptimizedRoute = route;
+            routePlans[routeOwner] = route.map(customer => customer.id);
+            saveRoutePlans();
             updateMapAndRouteUI();
         }
 
@@ -548,8 +928,8 @@
                 const marker = L.marker([cust.lat, cust.lng], { icon: customIcon }).addTo(map);
                 marker.bindPopup(`
                     <div class="p-2">
-                        <p class="font-bold text-xs text-slate-800">${cust.name}</p>
-                        <p class="text-xs text-slate-500">ID: ${cust.id}</p>
+                        <p class="font-bold text-xs text-slate-800">${escapeHTML(cust.name)}</p>
+                        <p class="text-xs text-slate-500">ID: ${escapeHTML(cust.id)}</p>
                         <p class="text-xs font-semibold text-emerald-600 mt-1">Potential: $${cust.turnover.toLocaleString()}</p>
                         <button onclick="switchTab('tab-visits')" class="mt-2 text-xs bg-indigo-600 text-white px-2.5 py-1 rounded">View Visit</button>
                     </div>
@@ -565,16 +945,20 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between">
-                            <h4 class="text-xs font-bold text-slate-800 truncate">${cust.name}</h4>
-                            ${isVisited ? '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Visited</span>' : ''}
+                            <h4 class="text-xs font-bold text-slate-800 truncate">${escapeHTML(cust.name)}</h4>
+                            <div class="flex items-center gap-1">
+                                ${isVisited ? '<span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Visited</span>' : ''}
+                                ${routeOwner === currentUser && !isInProgress ? `<button data-remove-stop="${escapeHTML(cust.id)}" class="text-slate-400 hover:text-rose-600 px-1" title="Remove stop from plan" aria-label="Remove stop"><i class="fa-solid fa-xmark"></i></button>` : ''}
+                            </div>
                         </div>
-                        <p class="text-[11px] text-slate-500">ID: ${cust.id} • Lat: ${cust.lat.toFixed(2)}, Lng: ${cust.lng.toFixed(2)}</p>
+                        <p class="text-[11px] text-slate-500">ID: ${escapeHTML(cust.id)} • Lat: ${cust.lat.toFixed(2)}, Lng: ${cust.lng.toFixed(2)}</p>
                         <div class="mt-1 flex items-center justify-between text-xs">
                             <span class="font-bold text-slate-700">$${cust.turnover.toLocaleString()}</span>
-                            <span class="text-slate-400 text-[10px]">Rep: ${cust.rep}</span>
+                            <span class="text-slate-400 text-[10px]">Rep: ${escapeHTML(cust.rep)}</span>
                         </div>
                     </div>
                 `;
+                routeCard.querySelector('[data-remove-stop]')?.addEventListener('click', event => removeRouteStop(event.currentTarget.dataset.removeStop));
                 routeListEl.appendChild(routeCard);
             });
 
@@ -619,6 +1003,7 @@
 
                 const formattedTime = shiftStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 timeText.innerText = `Started: ${formattedTime}`;
+                saveVisitState();
 
                 showToast(`Daily shift started at ${formattedTime}`, 'success');
             } else {
@@ -640,6 +1025,7 @@
                 statusBadge.className = "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600";
                 statusBadge.innerText = "Off-Clock";
                 timeText.innerText = "Started: --:--";
+                saveVisitState();
 
                 showToast('Daily shift concluded.', 'info');
             }
@@ -658,9 +1044,7 @@
             const container = document.getElementById('visitQueueContainer');
             container.innerHTML = '';
 
-            let filteredCust = (currentUser === 'ASM01') ? 
-                [...customers] : 
-                customers.filter(c => c.rep === currentUser);
+            const filteredCust = getRouteCustomers(currentUser);
 
             if (filteredCust.length === 0) {
                 container.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-xl border">No customer visits assigned for today.</div>`;
@@ -680,9 +1064,9 @@
                             <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded ${isCompleted ? 'bg-emerald-100 text-emerald-800' : isActive ? 'bg-amber-100 text-amber-800 animate-pulse' : 'bg-slate-100 text-slate-600'}">
                                 ${isCompleted ? 'Completed' : isActive ? 'In Progress' : 'Pending Visit'}
                             </span>
-                            <span class="text-xs font-mono font-bold text-slate-400">${cust.id}</span>
+                            <span class="text-xs font-mono font-bold text-slate-400">${escapeHTML(cust.id)}</span>
                         </div>
-                        <h3 class="font-bold text-slate-800 text-sm mb-1">${cust.name}</h3>
+                        <h3 class="font-bold text-slate-800 text-sm mb-1">${escapeHTML(cust.name)}</h3>
                         <p class="text-xs text-slate-500 mb-3"><i class="fa-solid fa-location-dot text-indigo-500 mr-1"></i> ${cust.lat.toFixed(4)}, ${cust.lng.toFixed(4)}</p>
                         
                         <div class="p-2.5 bg-slate-50 rounded-lg text-xs space-y-1 mb-4 border border-slate-100">
@@ -692,7 +1076,7 @@
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-slate-500">Sales Consultant:</span>
-                                <span class="font-medium text-slate-700">${cust.rep}</span>
+                                <span class="font-medium text-slate-700">${escapeHTML(cust.rep)}</span>
                             </div>
                         </div>
                     </div>
@@ -703,23 +1087,26 @@
                                 <i class="fa-solid fa-circle-check mr-1"></i> Completed: ${cust.visitOutcome || 'Done'}
                             </div>
                         ` : isActive ? `
-                            <button onclick="openCheckoutModal('${cust.id}')" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center justify-center space-x-1">
+                            <button data-checkout-id="${escapeHTML(cust.id)}" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center justify-center space-x-1">
                                 <i class="fa-solid fa-right-from-bracket"></i>
                                 <span>Check-Out & Submit Notes</span>
                             </button>
                         ` : `
-                            <button onclick="startCheckIn('${cust.id}')" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center justify-center space-x-1">
+                            <button data-checkin-id="${escapeHTML(cust.id)}" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center justify-center space-x-1">
                                 <i class="fa-solid fa-right-to-bracket"></i>
                                 <span>Check-In Location</span>
                             </button>
                         `}
                     </div>
                 `;
+                card.querySelector('[data-checkout-id]')?.addEventListener('click', event => openCheckoutModal(event.currentTarget.dataset.checkoutId));
+                card.querySelector('[data-checkin-id]')?.addEventListener('click', event => startCheckIn(event.currentTarget.dataset.checkinId));
                 container.appendChild(card);
             });
         }
 
         function startCheckIn(custId) {
+            if (getCurrentRole() === 'admin' || !(routePlans[currentUser] || []).includes(custId)) return;
             if (!activeShift) {
                 showToast('Please click "Start Day" at top right before checking in to customer visits!', 'warning');
                 return;
@@ -737,15 +1124,11 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => executeCheckInProcess(cust, pos.coords.latitude, pos.coords.longitude),
-                    () => {
-                        // Geolocation denied/fallback: mock slightly offset coordinates
-                        const mockLat = cust.lat + 0.0012; 
-                        const mockLng = cust.lng - 0.0008;
-                        executeCheckInProcess(cust, mockLat, mockLng);
-                    }
+                    () => showToast('Location access is required to check in. Enable GPS and try again.', 'warning'),
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
             } else {
-                executeCheckInProcess(cust, cust.lat, cust.lng);
+                showToast('This device does not support location tracking.', 'warning');
             }
         }
 
@@ -760,6 +1143,7 @@
                 custId: cust.id,
                 custName: cust.name,
                 checkInTime: new Date(),
+                checkInCoords: { lat: deviceLat, lng: deviceLng },
                 deviceLat: deviceLat,
                 deviceLng: deviceLng,
                 distanceOffsetMeters: distanceOffsetMeters,
@@ -773,15 +1157,20 @@
             
             // Log activity
             addActivityLog({
+                customerId: cust.id,
                 timestamp: activeVisit.checkInTime.toLocaleTimeString(),
                 rep: currentUser,
                 customer: cust.name,
                 action: 'Check-In',
                 duration: 'In Progress...',
-                gpsVerification: isLocationValid ? `Valid (${distanceOffsetMeters}m)` : `⚠️ Discrepancy (${distanceOffsetMeters}m away)`,
+                gpsVerification: isLocationValid ? `Check-in valid (${distanceOffsetMeters}m)` : `⚠️ Check-in discrepancy (${distanceOffsetMeters}m)`,
                 outcome: 'Pending',
-                notes: 'Check-in recorded'
+                notes: 'Check-in recorded',
+                checkInCoords: activeVisit.checkInCoords
             });
+
+            saveCustomers();
+            saveVisitState();
 
             document.getElementById('activeVisitTimerBanner').classList.remove('hidden');
             renderVisitsQueue();
@@ -809,17 +1198,48 @@
             document.getElementById('activeVisitTimerBanner').classList.add('hidden');
         }
 
-        /* --- STREAMING_CHUNK:Building Modal Handlers & Log Exporters... --- */
-        /* --- CHECK-OUT MODAL FORM HANDLING --- */
         function openCheckoutModal(custId) {
             if (!activeVisit || activeVisit.custId !== custId) return;
+            const customer = customers.find(c => c.id === custId);
+            if (!customer) return;
 
             document.getElementById('checkoutCustId').value = custId;
             document.getElementById('checkoutCustName').value = activeVisit.custName;
-            
+
             const timerText = document.getElementById('liveTimerText').innerText;
             document.getElementById('checkoutDuration').value = timerText;
-            document.getElementById('checkoutGpsDistance').value = `${activeVisit.distanceOffsetMeters} meters`;
+            const gpsDistance = document.getElementById('checkoutGpsDistance');
+            const submitButton = document.getElementById('checkoutSubmitButton');
+            gpsDistance.value = 'Capturing device location...';
+            submitButton.disabled = true;
+            activeVisit.checkoutCoords = null;
+            activeVisit.checkoutDistanceMeters = null;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        if (!activeVisit || activeVisit.custId !== custId) return;
+                        const distanceMeters = Math.round(calculateDistance(
+                            customer.lat, customer.lng, pos.coords.latitude, pos.coords.longitude
+                        ) * 1000);
+                        activeVisit.checkoutCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                        activeVisit.checkoutDistanceMeters = distanceMeters;
+                        gpsDistance.value = `${distanceMeters} m from customer`;
+                        submitButton.disabled = false;
+                        saveVisitState();
+                    },
+                    () => {
+                        if (!activeVisit || activeVisit.custId !== custId) return;
+                        gpsDistance.value = 'Unavailable';
+                        submitButton.disabled = false;
+                        showToast('Check-out GPS is unavailable; the visit can still be submitted and will be flagged.', 'warning');
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            } else {
+                gpsDistance.value = 'Unsupported';
+                submitButton.disabled = false;
+            }
 
             document.getElementById('checkoutModal').classList.remove('hidden');
         }
@@ -830,11 +1250,16 @@
 
         function submitCheckout(e) {
             e.preventDefault();
+            if (document.getElementById('checkoutSubmitButton').disabled) {
+                showToast('Wait for the check-out location request to finish.', 'warning');
+                return;
+            }
 
             const custId = document.getElementById('checkoutCustId').value;
             const outcome = document.getElementById('checkoutOutcome').value;
             const notes = document.getElementById('checkoutNotes').value;
             const durationText = document.getElementById('checkoutDuration').value;
+            const checkOutTime = new Date();
 
             const cust = customers.find(c => c.id === custId);
             if (cust) {
@@ -845,18 +1270,24 @@
 
             // Log completion entry
             addActivityLog({
-                timestamp: new Date().toLocaleTimeString(),
+                customerId: custId,
+                timestamp: checkOutTime.toLocaleTimeString(),
                 rep: currentUser,
                 customer: activeVisit.custName,
                 action: 'Check-Out',
                 duration: durationText,
-                gpsVerification: activeVisit.isLocationValid ? 'Valid Location' : `⚠️ Flagged (${activeVisit.distanceOffsetMeters}m)`,
+                gpsVerification: `${activeVisit.isLocationValid ? `Check-in valid (${activeVisit.distanceOffsetMeters}m)` : `⚠️ Check-in flagged (${activeVisit.distanceOffsetMeters}m)`}; ${activeVisit.checkoutCoords ? `check-out ${activeVisit.checkoutDistanceMeters <= 300 ? 'valid' : '⚠️ flagged'} (${activeVisit.checkoutDistanceMeters}m)` : '⚠️ check-out GPS unavailable'}`,
                 outcome: outcome,
-                notes: notes
+                notes: notes,
+                checkInTime: activeVisit.checkInTime.toISOString(),
+                checkOutTime: checkOutTime.toISOString(),
+                checkInCoords: activeVisit.checkInCoords,
+                checkOutCoords: activeVisit.checkoutCoords
             });
 
             stopVisitTimer();
             activeVisit = null;
+            saveVisitState();
             closeCheckoutModal();
 
             // Refresh UI
@@ -871,6 +1302,7 @@
         /* --- ACTIVITY LOGS & REPORTS --- */
         function addActivityLog(logItem) {
             visitLogs.unshift(logItem);
+            saveVisitState();
             renderActivityLogs();
         }
 
@@ -883,32 +1315,48 @@
                 return;
             }
 
-            visitLogs.forEach(log => {
+            const visibleIds = new Set(getVisibleCustomers().map(c => c.id));
+            const visibleLogs = visitLogs.filter(log =>
+                log.customerId ? visibleIds.has(log.customerId) : log.rep === currentUser
+            );
+
+            if (visibleLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">No visit activity recorded for this profile today.</td></tr>`;
+                return;
+            }
+
+            visibleLogs.forEach(log => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-all";
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-medium text-slate-600">${log.timestamp}</td>
-                    <td class="p-3 font-bold text-slate-700">${log.rep}</td>
-                    <td class="p-3 font-semibold text-slate-800">${log.customer}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${log.action === 'Check-In' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'}">${log.action}</span></td>
-                    <td class="p-3 font-mono text-slate-600">${log.duration}</td>
-                    <td class="p-3"><span class="text-xs ${log.gpsVerification.includes('⚠️') ? 'text-rose-600 font-bold' : 'text-emerald-600 font-semibold'}">${log.gpsVerification}</span></td>
-                    <td class="p-3 font-bold text-slate-700">${log.outcome}</td>
-                    <td class="p-3 text-slate-500 truncate max-w-xs">${log.notes}</td>
+                    <td class="p-3 font-mono font-medium text-slate-600">${escapeHTML(log.timestamp)}</td>
+                    <td class="p-3 font-bold text-slate-700">${escapeHTML(log.rep)}</td>
+                    <td class="p-3 font-semibold text-slate-800">${escapeHTML(log.customer)}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${log.action === 'Check-In' ? 'bg-indigo-100 text-indigo-800' : 'bg-emerald-100 text-emerald-800'}">${escapeHTML(log.action)}</span></td>
+                    <td class="p-3 font-mono text-slate-600">${escapeHTML(log.duration)}</td>
+                    <td class="p-3"><span class="text-xs ${log.gpsVerification.includes('⚠️') ? 'text-rose-600 font-bold' : 'text-emerald-600 font-semibold'}">${escapeHTML(log.gpsVerification)}</span></td>
+                    <td class="p-3 font-bold text-slate-700">${escapeHTML(log.outcome)}</td>
+                    <td class="p-3 text-slate-500 truncate max-w-xs">${escapeHTML(log.notes)}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
         function exportLogsCSV() {
-            if (visitLogs.length === 0) {
+            const visibleIds = new Set(getVisibleCustomers().map(c => c.id));
+            const visibleLogs = visitLogs.filter(log =>
+                log.customerId ? visibleIds.has(log.customerId) : log.rep === currentUser
+            );
+            if (visibleLogs.length === 0) {
                 showToast('No logs available to export.', 'warning');
                 return;
             }
 
-            let csv = 'Timestamp,Sales Rep,Customer,Action,Duration,GPS Verification,Outcome,Notes\n';
-            visitLogs.forEach(l => {
-                csv += `"${l.timestamp}","${l.rep}","${l.customer}","${l.action}","${l.duration}","${l.gpsVerification}","${l.outcome}","${l.notes}"\n`;
+            let csv = 'Timestamp,Sales Rep,Customer,Action,Duration,GPS Verification,Outcome,Notes,Check-In Time,Check-Out Time,Check-In Latitude,Check-In Longitude,Check-Out Latitude,Check-Out Longitude\n';
+            visibleLogs.forEach(l => {
+                const values = [l.timestamp, l.rep, l.customer, l.action, l.duration, l.gpsVerification, l.outcome, l.notes,
+                    l.checkInTime, l.checkOutTime, l.checkInCoords?.lat, l.checkInCoords?.lng, l.checkOutCoords?.lat, l.checkOutCoords?.lng];
+                csv += values.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',') + '\n';
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -925,7 +1373,7 @@
             const search = document.getElementById('customerSearch').value.toLowerCase();
             tbody.innerHTML = '';
 
-            let filtered = customers.filter(c => 
+            let filtered = getVisibleCustomers().filter(c => 
                 c.id.toLowerCase().includes(search) || 
                 c.name.toLowerCase().includes(search) ||
                 c.rep.toLowerCase().includes(search)
@@ -936,19 +1384,56 @@
             filtered.forEach(cust => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-all";
+                const repOptions = users.filter(user => user.role === 'rep').map(user =>
+                    `<option value="${escapeHTML(user.id)}" ${cust.rep === user.id ? 'selected' : ''}>${escapeHTML(user.id)} - ${escapeHTML(user.name)}</option>`
+                ).join('');
+                const managerOptions = users.filter(user => user.role === 'manager').map(user =>
+                    `<option value="${escapeHTML(user.id)}" ${cust.asm === user.id ? 'selected' : ''}>${escapeHTML(user.id)} - ${escapeHTML(user.name)}</option>`
+                ).join('');
                 tr.innerHTML = `
-                    <td class="p-3 font-mono font-bold text-indigo-600">${cust.id}</td>
-                    <td class="p-3 font-semibold text-slate-800">${cust.name}</td>
+                    <td class="p-3 font-mono font-bold text-indigo-600">${escapeHTML(cust.id)}</td>
+                    <td class="p-3 font-semibold text-slate-800">${escapeHTML(cust.name)}</td>
                     <td class="p-3 font-mono text-slate-500">${cust.lat}, ${cust.lng}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-100 font-bold text-slate-700 text-[10px]">${cust.rep}</span></td>
-                    <td class="p-3 text-slate-500">${cust.asm}</td>
+                    <td class="p-3"><select data-assign-rep class="border border-slate-300 rounded px-2 py-1 bg-white">${repOptions}</select></td>
+                    <td class="p-3"><select data-assign-manager class="border border-slate-300 rounded px-2 py-1 bg-white">${managerOptions}</select></td>
                     <td class="p-3 text-right font-bold text-emerald-600">$${cust.turnover.toLocaleString()}</td>
                     <td class="p-3 text-center">
-                        <button onclick="deleteCustomer('${cust.id}')" class="text-rose-500 hover:text-rose-700 text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                        <button data-delete-id="${escapeHTML(cust.id)}" class="text-rose-500 hover:text-rose-700 text-xs px-2 py-1" aria-label="Delete customer"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
+                tr.querySelector('[data-assign-rep]').addEventListener('change', event => updateCustomerAssignment(cust.id, 'rep', event.currentTarget.value));
+                tr.querySelector('[data-assign-manager]').addEventListener('change', event => updateCustomerAssignment(cust.id, 'asm', event.currentTarget.value));
+                tr.querySelector('[data-delete-id]').addEventListener('click', event => deleteCustomer(event.currentTarget.dataset.deleteId));
                 tbody.appendChild(tr);
             });
+        }
+
+        function updateCustomerAssignment(customerId, field, userId) {
+            if (getCurrentRole() !== 'admin') return;
+            const customer = customers.find(item => item.id === customerId);
+            const assignedUser = getUser(userId);
+            if (!customer || !assignedUser) return;
+
+            const previousRep = customer.rep;
+            if (field === 'rep' && assignedUser.role === 'rep') {
+                customer.rep = assignedUser.id;
+                customer.asm = assignedUser.managerId || customer.asm;
+            } else if (field === 'asm' && assignedUser.role === 'manager') {
+                customer.asm = assignedUser.id;
+                const rep = getUser(customer.rep);
+                if (rep) rep.managerId = assignedUser.id;
+            }
+
+            if (previousRep !== customer.rep) {
+                routePlans[previousRep] = (routePlans[previousRep] || []).filter(id => id !== customerId);
+                routePlans[customer.rep] ||= [];
+                if (!routePlans[customer.rep].includes(customerId)) routePlans[customer.rep].push(customerId);
+            }
+            saveUsers();
+            saveCustomers();
+            saveRoutePlans();
+            refreshAppViews();
+            showToast(`Assignments updated for ${customerId}.`, 'success');
         }
 
         function deleteCustomer(id) {
@@ -961,51 +1446,123 @@
         }
 
         function resetToSampleData() {
+            if (getCurrentRole() !== 'admin') return;
             customers = [...DEFAULT_CUSTOMERS];
+            users = DEFAULT_USERS.map(user => ({ ...user }));
+            routePlans = {
+                SC101: customers.filter(customer => customer.rep === 'SC101').map(customer => customer.id),
+                SC102: customers.filter(customer => customer.rep === 'SC102').map(customer => customer.id),
+                ASM01: []
+            };
             saveCustomers();
+            saveUsers();
+            saveRoutePlans();
+            populateUserSelector();
             refreshAppViews();
             showToast('Reset to default sample database.', 'success');
         }
 
         function handleCSVUpload(e) {
+            if (getCurrentRole() !== 'admin') return;
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const text = evt.target.result;
-                const lines = text.split('\n');
+                const rows = parseCSV(evt.target.result);
                 let count = 0;
+                let skipped = 0;
 
-                lines.forEach((line, index) => {
-                    if (index === 0 || !line.trim()) return; // skip header/empty
-                    const parts = line.split(',');
-                    if (parts.length >= 6) {
-                        const [id, name, lat, lng, rep, asm, turnover] = parts.map(p => p.trim().replace(/"/g, ''));
-                        if (id && name && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
-                            customers.push({
-                                id: id,
-                                name: name,
-                                lat: parseFloat(lat),
-                                lng: parseFloat(lng),
-                                rep: rep || "SC101",
-                                asm: asm || "ASM01",
-                                turnover: parseFloat(turnover) || 50000
-                            });
-                            count++;
-                        }
+                rows.slice(1).forEach(columns => {
+                    const [id, name, latValue, lngValue, rep, asm, turnoverValue] = columns;
+                    const lat = Number(latValue);
+                    const lng = Number(lngValue);
+                    const turnover = Number(turnoverValue);
+                    if (!/^[A-Za-z0-9_-]+$/.test(id || '') || !name || !rep || !asm || !Number.isFinite(lat) || !Number.isFinite(lng) ||
+                        lat < -90 || lat > 90 || lng < -180 || lng > 180 || !Number.isFinite(turnover) || turnover < 0 ||
+                        customers.some(customer => customer.id === id)) {
+                        skipped++;
+                        return;
                     }
+                    customers.push({ id, name, lat, lng, rep, asm, turnover });
+                    count++;
                 });
 
+                ensureUsersFromCustomers();
+                customers.filter(customer => !customer.routeOnly).forEach(customer => {
+                    routePlans[customer.rep] ||= [];
+                    if (!routePlans[customer.rep].includes(customer.id)) routePlans[customer.rep].push(customer.id);
+                });
                 saveCustomers();
+                saveUsers();
+                saveRoutePlans();
+                populateUserSelector();
                 refreshAppViews();
-                showToast(`Successfully imported ${count} customers from CSV!`, 'success');
+                showToast(`Imported ${count} customers; skipped ${skipped} invalid or duplicate rows.`, count ? 'success' : 'warning');
             };
             reader.readAsText(file);
         }
 
+        function parseCSV(text) {
+            const rows = [];
+            let row = [];
+            let value = '';
+            let quoted = false;
+
+            for (let index = 0; index < text.length; index++) {
+                const character = text[index];
+                if (character === '"') {
+                    if (quoted && text[index + 1] === '"') {
+                        value += '"';
+                        index++;
+                    } else {
+                        quoted = !quoted;
+                    }
+                } else if (character === ',' && !quoted) {
+                    row.push(value.trim());
+                    value = '';
+                } else if ((character === '\n' || character === '\r') && !quoted) {
+                    if (character === '\r' && text[index + 1] === '\n') index++;
+                    row.push(value.trim());
+                    if (row.some(cell => cell !== '')) rows.push(row);
+                    row = [];
+                    value = '';
+                } else {
+                    value += character;
+                }
+            }
+
+            if (value || row.length) {
+                row.push(value.trim());
+                if (row.some(cell => cell !== '')) rows.push(row);
+            }
+            return rows;
+        }
+
+        function downloadCSVTemplate() {
+            const template = 'Customer Number,Customer Name,Latitude,Longitude,Sales Consultant Number,Area Sales Manager Number,Turnover\nCUST-201,Example Customer,25.1234,55.2345,SC101,ASM01,125000\n';
+            const url = URL.createObjectURL(new Blob([template], { type: 'text/csv' }));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'customer_upload_template.csv';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
         /* --- UI TAB NAVIGATION & TOAST UTILITY --- */
         function switchTab(tabId) {
+            if (tabId === 'tab-customers' && getCurrentRole() !== 'admin') return;
+            if (getCurrentRole() === 'admin' && tabId !== 'tab-customers') return;
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(el => {
                 el.classList.remove('bg-indigo-50', 'text-indigo-700', 'font-semibold');
