@@ -46,8 +46,13 @@
             </div>
 
             <!-- Login / Role Simulator Dropdown -->
-            <div class="flex items-center space-x-4">
-                <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm">
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <nav class="hidden lg:flex items-center gap-1 text-xs" aria-label="Role portals">
+                    <a href="sales-rep.html" class="px-2 py-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-800">Rep</a>
+                    <a href="manager.html" class="px-2 py-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-800">Manager</a>
+                    <a href="admin.html" class="px-2 py-1.5 rounded text-slate-300 hover:text-white hover:bg-slate-800">Admin</a>
+                </nav>
+                <div id="userProfileControl" class="flex items-center bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm">
                     <i class="fa-solid fa-user-gear text-indigo-400 mr-2"></i>
                     <span class="text-slate-400 mr-2 hidden sm:inline">Sign in as:</span>
                     <select id="userSelector" onchange="switchUser()" class="bg-transparent font-medium text-white focus:outline-none cursor-pointer">
@@ -437,6 +442,7 @@
         let customers = [];
         let users = [];
         let currentUser = "SC101";
+        let roleLocked = '';
         let routePlans = {};
         let routeOwner = currentUser;
         let activeShift = false;
@@ -461,7 +467,16 @@
 
             users = JSON.parse(localStorage.getItem('optiroute_users') || 'null') || DEFAULT_USERS.map(user => ({ ...user }));
             ensureUsersFromCustomers();
-            currentUser = localStorage.getItem('optiroute_user') || currentUser;
+            const requestedRole = new URLSearchParams(window.location.search).get('role');
+            roleLocked = ['admin', 'rep', 'manager'].includes(requestedRole) ? requestedRole : '';
+            if (roleLocked) {
+                const savedProfile = getUser(localStorage.getItem('optiroute_user'));
+                currentUser = savedProfile?.role === roleLocked
+                    ? savedProfile.id
+                    : users.find(user => user.role === roleLocked)?.id || currentUser;
+            } else {
+                currentUser = localStorage.getItem('optiroute_user') || currentUser;
+            }
             routePlans = JSON.parse(localStorage.getItem('optiroute_route_plans') || 'null') || {};
             users.filter(user => user.role === 'rep').forEach(user => {
                 if (!Array.isArray(routePlans[user.id])) {
@@ -541,6 +556,10 @@
 
         function switchUser() {
             const selectedUser = document.getElementById('userSelector').value;
+            if (roleLocked && getUser(selectedUser)?.role !== roleLocked) {
+                document.getElementById('userSelector').value = currentUser;
+                return;
+            }
             if (activeShift && selectedUser !== currentUser) {
                 document.getElementById('userSelector').value = currentUser;
                 showToast('End the active day before switching profiles.', 'warning');
@@ -556,10 +575,11 @@
 
         function populateUserSelector() {
             const selector = document.getElementById('userSelector');
-            const selected = users.some(user => user.id === currentUser)
+            const availableUsers = roleLocked ? users.filter(user => user.role === roleLocked) : users;
+            const selected = availableUsers.some(user => user.id === currentUser)
                 ? currentUser
-                : users.find(user => user.role === 'rep')?.id || users[0]?.id || '';
-            selector.innerHTML = users.map(user => {
+                : availableUsers.find(user => user.role === 'rep')?.id || availableUsers[0]?.id || '';
+            selector.innerHTML = availableUsers.map(user => {
                 const roleLabel = user.role === 'admin' ? 'Admin' : user.role === 'manager' ? 'Manager' : 'Sales Rep';
                 return `<option value="${escapeHTML(user.id)}" class="bg-slate-800">${escapeHTML(user.id)} - ${escapeHTML(user.name)} (${roleLabel})</option>`;
             }).join('');
@@ -591,7 +611,7 @@
             document.getElementById('nav-optimizer').classList.toggle('hidden', admin);
             document.getElementById('nav-visits').classList.toggle('hidden', admin);
             document.getElementById('nav-reports').classList.toggle('hidden', admin);
-            document.getElementById('shiftBtn').classList.toggle('hidden', admin);
+            document.getElementById('shiftBtn').classList.toggle('hidden', getCurrentRole() !== 'rep');
             switchTab(admin ? 'tab-customers' : 'tab-optimizer');
         }
 
