@@ -483,7 +483,7 @@
                     ? savedProfile.id
                     : users.find(user => user.role === roleLocked)?.id || currentUser;
             } else {
-                currentUser = localStorage.getItem('optiroute_user') || currentUser;
+                currentUser = users.find(user => user.role === 'admin')?.id || currentUser;
             }
             routePlans = JSON.parse(localStorage.getItem('optiroute_route_plans') || 'null') || {};
             users.filter(user => user.role === 'rep').forEach(user => {
